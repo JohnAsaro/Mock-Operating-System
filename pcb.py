@@ -8,7 +8,7 @@ class PCB:
         Args:
             p_id (int): Process Identifier (PID), should be some unique integer.
             cpu_state (int): Inital CPU state, should be 0 when initalized.
-            memory (int): Memory required by the process, should be some integer.
+            memory (int): Memory required by the process, should be some integer representing the amount of bytes the process requires.
             scheduling_info (int): Should be some interger corresponding to how high priority this process is, the lower the number the higher the priority.
             accounting_info (int): Should be some integer corresponding to how much time this process needs to run.
             process_state (str): Should be some string corresponding to the state of the process, should be initalized as "NEW".
@@ -112,7 +112,7 @@ def read_pcb_data(file_path):
                         cpu_required=cpu_required
                     )
 
-                    # Append the created PCB object to the list
+                    #Append the created PCB object to the list
                     pcb_list.append(pcb)
 
     except FileNotFoundError as e:
@@ -150,6 +150,9 @@ def validate_pcb_data(pcb_list): #Check to see if the data in the PCBs is valid
 
     valid = True #Assume the data is valid until proven otherwise
 
+    #Collect all valid p_id values from the PCB list
+    valid_pids = {pcb.p_id for pcb in pcb_list}
+
     for pcb in pcb_list:
         if isinstance(pcb.p_id, int) == False:
             print(f"Error: Invalid PID for PCB with ID {pcb.p_id}")
@@ -169,12 +172,15 @@ def validate_pcb_data(pcb_list): #Check to see if the data in the PCBs is valid
         if isinstance(pcb.process_state, str) == False:
             print(f"Error: Invalid process state for PCB with ID {pcb.p_id}")
             valid = False
-        if ((isinstance(pcb.parent, int) == False) and (pcb.parent != None)):
+
+        #Validate parent and children against the list of valid PIDs
+        if pcb.parent is not None and (not isinstance(pcb.parent, int) or pcb.parent not in valid_pids):
             print(f"Error: Invalid parent for PCB with ID {pcb.p_id}")
             valid = False
-        if ((isinstance(pcb.children, int) == False) and (pcb.children != None)):
+        if pcb.children is not None and (not isinstance(pcb.children, int) or pcb.children not in valid_pids):
             print(f"Error: Invalid children for PCB with ID {pcb.p_id}")
             valid = False
+            
         if isinstance(pcb.other_resources, str) == False:
             print(f"Error: Invalid other resources for PCB with ID {pcb.p_id}")
             valid = False
@@ -184,9 +190,10 @@ def validate_pcb_data(pcb_list): #Check to see if the data in the PCBs is valid
         if isinstance(pcb.cpu_required, int) == False:
             print(f"Error: Invalid CPU required for PCB with ID {pcb.p_id}")
             valid = False
-
         #For now I am not going to bother checking the values of quantum or context_switch_penalty as they are hardcoded in the PCB class,
         #but I will add some sort of check if I make them changable later
+    return valid
+       
         
 
 
@@ -195,6 +202,7 @@ def main(): #Usage example
     pcb_data_file = filefinder("example_pcb_data.txt")
     pcb_list = read_pcb_data(pcb_data_file)
     display_pcbs(pcb_list)
+    validate_pcb_data(pcb_list)
 
 #Test function
 if __name__ == "__main__":

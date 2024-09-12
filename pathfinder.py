@@ -1,16 +1,30 @@
-#Use this to construct file paths directly from the root of the repository, not actually part of the mock operating system per sey, just super convienent
-
 import os
 
 def filefinder(filename):
+    """
+    Finds the given file in the 'Files' folder or prompts the user to provide a path.
 
-    current_dir = os.getcwd() #Get the current working directory
+    Args:
+        filename (str): The name of the file to find.
 
-    while not os.path.exists(os.path.join(current_dir, ".git")): #Go back to root
-        current_dir = os.path.dirname(current_dir)
+    Returns:
+        str: The absolute path to the file.
 
-    relative_path = ("Files\\") 
-    file_path = os.path.join(current_dir, relative_path) #Construct the relative path to the CSV file from the root of the repository
-    file_path = os.path.join(file_path, filename) #Add file name to end of path
+    Raises:
+        FileNotFoundError: If the file cannot be found.
+    """
+    #Define the path to the 'Files' folder
+    files_folder_path = os.path.join(os.getcwd(), "Files")
 
-    return file_path
+    #Check if the file exists in the 'Files' folder
+    file_path = os.path.join(files_folder_path, filename)
+    if os.path.isfile(file_path):
+        return os.path.abspath(file_path)
+    else:
+        print(f"File '{filename}' not found in the 'Files' folder.")
+        #Prompt the user to provide a path
+        user_file_path = input("Please enter the full path to the file: ")
+        if os.path.isfile(user_file_path):
+            return os.path.abspath(user_file_path)
+        else:
+            raise FileNotFoundError(f"File '{user_file_path}' not found.")
