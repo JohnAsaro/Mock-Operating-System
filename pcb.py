@@ -1,4 +1,5 @@
 from pathfinder import filefinder
+#import math
 
 #PCB class
 class PCB:
@@ -78,7 +79,7 @@ def read_pcb_data(file_path):
                     data = line.strip().split()
 
                     # Validate that the data line has the correct number of fields (13 fields based on your updated PCB class)
-                    if len(data) != 13:
+                    if len(data) != 11:
                         raise ValueError(f"Incorrect data format in line: {line.strip()}")
 
                     # Parse the data into appropriate types
@@ -88,8 +89,8 @@ def read_pcb_data(file_path):
                     scheduling_info = int(data[3])
                     accounting_info = int(data[4])
                     process_state = data[5]
-                    parent = None if data[6] == "NULL" else int(data[6])
-                    children = None if data[7] == "NULL" else int(data[7])
+                    parent = None if data[6] == "None" else int(data[6])
+                    children = None if data[7] == "None" else int(data[7])
                     other_resources = data[8]
                     arrival_time = int(data[9])
                     cpu_required = int(data[10])
@@ -124,12 +125,77 @@ def read_pcb_data(file_path):
 
     return pcb_list
 
-def display_pcbs(pcbs): #Display the PCBs in a list
-    for pcb in pcbs:
+def display_pcbs(pcb_list): 
+    """
+    Display the PCBs in a list.
+
+    Args:
+       pcb_list: The list of PCB objects to display.
+    """
+    if not pcb_list:
+        print("No PCBs to display.")
+    for pcb in pcb_list:
         print(pcb)
 
+def validate_pcb_data(pcb_list): #Check to see if the data in the PCBs is valid
+    """
+    Check to see if all of the PCB data is valid.
+
+    Args:
+       pcbs: The list of PCB objects to check.
+
+    Returns:
+        bool: True if all data is valid, False otherwise.
+    """
+
+    valid = True #Assume the data is valid until proven otherwise
+
+    for pcb in pcb_list:
+        if isinstance(pcb.p_id, int) == False:
+            print(f"Error: Invalid PID for PCB with ID {pcb.p_id}")
+            valid = False
+        if isinstance(pcb.cpu_state, int) == False:
+            print(f"Error: Invalid CPU state for PCB with ID {pcb.p_id}")
+            valid = False
+        if isinstance(pcb.memory, int) == False:
+            print(f"Error: Invalid memory value for PCB with ID {pcb.p_id}")
+            valid = False
+        if isinstance(pcb.scheduling_info, int) == False:
+            print(f"Error: Invalid scheduling info for PCB with ID {pcb.p_id}")
+            valid = False
+        if isinstance(pcb.accounting_info, int) == False:
+            print(f"Error: Invalid accounting info for PCB with ID {pcb.p_id}")
+            valid = False
+        if isinstance(pcb.process_state, str) == False:
+            print(f"Error: Invalid process state for PCB with ID {pcb.p_id}")
+            valid = False
+        if ((isinstance(pcb.parent, int) == False) and (pcb.parent != None)):
+            print(f"Error: Invalid parent for PCB with ID {pcb.p_id}")
+            valid = False
+        if ((isinstance(pcb.children, int) == False) and (pcb.children != None)):
+            print(f"Error: Invalid children for PCB with ID {pcb.p_id}")
+            valid = False
+        if isinstance(pcb.other_resources, str) == False:
+            print(f"Error: Invalid other resources for PCB with ID {pcb.p_id}")
+            valid = False
+        if isinstance(pcb.arrival_time, int) == False:
+            print(f"Error: Invalid arrival time for PCB with ID {pcb.p_id}")
+            valid = False
+        if isinstance(pcb.cpu_required, int) == False:
+            print(f"Error: Invalid CPU required for PCB with ID {pcb.p_id}")
+            valid = False
+
+        #For now I am not going to bother checking the values of quantum or context_switch_penalty as they are hardcoded in the PCB class,
+        #but I will add some sort of check if I make them changable later
+        
+
+
+
 def main(): #Usage example
-    if __name__ == "__main__":
-        pcb_data_file = filefinder("example_pcb_data.txt")
-        pcb_list = read_pcb_data(pcb_data_file)
-        display_pcbs(pcb_list)
+    pcb_data_file = filefinder("example_pcb_data.txt")
+    pcb_list = read_pcb_data(pcb_data_file)
+    display_pcbs(pcb_list)
+
+#Test function
+if __name__ == "__main__":
+    main()
