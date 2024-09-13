@@ -54,9 +54,8 @@ def menu(): #Display menu options
             int(input("Enter Scheduling Info (Should be some integer corresponding to how high priority this process is, the lower the number the higher the priority): ")),
             int(input("Enter Accounting Info (Should be some integer representing how much time this process needs to run): ")),
             input("Enter Process State (Should be a string representing the state of the process, should be initialized as 'NEW'): "),
-            input("Enter Parent PID (Should be the PID of the parent process or None if there is no parent): "),
-            input("Enter Children PID (Should be the PID of the child process or None if there are no children): "),
-            input("Enter Other Resources (Should be a string of any other system resources needed by the process): "),
+            None if (parent_input := input("Enter Parent PID (Should be the PID of the parent process or None if there is no parent): ")) == "None" else int(parent_input),
+            None if (child_input := input("Enter Parent PID (Should be the PID of the child process or None if there is no parent): ")) == "None" else int(child_input),            input("Enter Other Resources (Should be a string of any other system resources needed by the process): "),
             int(input("Enter Arrival Time (Should be an integer >= 0 representing the time at which the process arrives in the system): ")),
             int(input("Enter CPU Required (Should be an integer > 0 representing the amount of CPU time required by the process): "))
             )
@@ -64,16 +63,16 @@ def menu(): #Display menu options
             print("\n")
             
             #Check if the new PID is already in the list of existing PCBs
+            newlist = pcb_list.copy()
+            newlist.append(NEW_PCB)
             existing_pids = {pcb.p_id for pcb in pcb_list}
             if NEW_PCB.p_id in existing_pids:
                 print(f"Error: PID {NEW_PCB.p_id} already exists. Please enter a unique PID.")
-            elif not validate_pcb_data([NEW_PCB]):
+            elif not validate_pcb_data(newlist): #Check if the new PCB is valid
                 print("Invalid PCB data. Please try again.")
             else:
                 valid = True  #The new PCB is valid and can be added to the list of PCBs
         
-
-
         PCB_3_choice = input("New PCB created, would you like to store it in a file? (Y/N): ").upper()
         while PCB_3_choice != "Y" and PCB_3_choice != "N":
             PCB_3_choice = input("Invalid input. Please enter 'Y' or 'N': ").upper()
@@ -83,7 +82,7 @@ def menu(): #Display menu options
                 file.write(f"{NEW_PCB.p_id} {NEW_PCB.cpu_state} {NEW_PCB.memory} {NEW_PCB.scheduling_info} {NEW_PCB.accounting_info} {NEW_PCB.process_state} {NEW_PCB.parent} {NEW_PCB.children} {NEW_PCB.other_resources} {NEW_PCB.arrival_time} {NEW_PCB.cpu_required}\n")
                 print("Your PCB has been stored in the file 'os_pcbs.txt'.")
         else:
-            PCB_3_choice_2 = input("Are you sure? Your PCB will be discared? (Y/N): ").upper()
+            PCB_3_choice_2 = input("Are you sure? Your PCB will be discarded? (Y/N): ").upper()
             while PCB_3_choice_2 != "Y" and PCB_3_choice_2 != "N":
                 PCB_3_choice_2 = input("Invalid input. Please enter 'Y' or 'N': ").upper()
             if PCB_3_choice_2 == "Y":
