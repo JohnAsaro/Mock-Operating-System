@@ -1,5 +1,4 @@
 from pathfinder import filefinder
-#import math
 
 #PCB class
 class PCB:
@@ -198,12 +197,12 @@ def validate_pcb_data(pcb_list): #Check to see if the data in the PCBs is valid
 
 
 
-def main(): #Usage example
-    pcb_data_file = filefinder("example_pcb_data.txt")
-    pcb_list = read_pcb_data(pcb_data_file)
-    display_pcbs(pcb_list)
-    validate_pcb_data(pcb_list)
+#def main(): #Usage example
+#    pcb_data_file = filefinder("example_pcb_data.txt")
+#    pcb_list = read_pcb_data(pcb_data_file)
+#    display_pcbs(pcb_list)
+#    validate_pcb_data(pcb_list)
 
 #Test function
-if __name__ == "__main__":
-    main()
+#if __name__ == "__main__":
+#    main()

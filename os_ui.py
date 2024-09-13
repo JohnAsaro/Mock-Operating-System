@@ -27,7 +27,7 @@ def menu(): #Display menu options
         
     elif choice == "2":
        
-        PCB_2_choice = input("Would you like to validate the list of stored PCB's [1], or another PCB stored in a file [2]?")
+        PCB_2_choice = input("Would you like to validate the list of stored PCBs [1], or another list of PCBs stored in a file [2]?: ")
         while PCB_2_choice != "1" and PCB_2_choice != "2":
             PCB_2_choice = input("Invalid input. Please enter '1' or '2': ").upper()
         if PCB_2_choice == "1":
@@ -40,7 +40,7 @@ def menu(): #Display menu options
         else:
             print("Some PCB data is invalid")
 
-    elif choice == "3":
+    elif choice == "3": #One problem that exists rn is that a PID X's child is not updated when a new PCB Y is created with a parent PID X
         file_path = filefinder("os_pcbs.txt")
         NEW_PCB = PCB(
         int(input("Enter PID (Process Identifier (PID), should be some unique integer): ")), 
