@@ -41,20 +41,38 @@ def menu(): #Display menu options
             print("Some PCB data is invalid")
 
     elif choice == "3": #One problem that exists rn is that a PID X's child is not updated when a new PCB Y is created with a parent PID X
+
+        valid = False
         file_path = filefinder("os_pcbs.txt")
-        NEW_PCB = PCB(
-        int(input("Enter PID (Process Identifier (PID), should be some unique integer): ")), 
-        int(input("Enter CPU_State (Initial CPU state, should be 0 when initialized): ")),
-        int(input("Enter Memory (Should be some integer representing the amount of bytes the process requires): ")),
-        int(input("Enter Scheduling Info (Should be some integer corresponding to how high priority this process is, the lower the number the higher the priority): ")),
-        int(input("Enter Accounting Info (Should be some integer representing how much time this process needs to run): ")),
-        input("Enter Process State (Should be a string representing the state of the process, should be initialized as 'NEW'): "),
-        input("Enter Parent PID (Should be the PID of the parent process or None if there is no parent): "),
-        input("Enter Children PID (Should be the PID of the child process or None if there are no children): "),
-        input("Enter Other Resources (Should be a string of any other system resources needed by the process): "),
-        int(input("Enter Arrival Time (Should be an integer >= 0 representing the time at which the process arrives in the system): ")),
-        int(input("Enter CPU Required (Should be an integer > 0 representing the amount of CPU time required by the process): "))
-        )
+        pcb_list = read_pcb_data(file_path) #Read the existing PCBs from the file
+
+        while valid == False:    #Loop until valid PCB data is entered
+            NEW_PCB = PCB(
+            int(input("Enter PID (Process Identifier (PID), should be some unique integer): ")), 
+            int(input("Enter CPU_State (Initial CPU state, should be 0 when initialized): ")),
+            int(input("Enter Memory (Should be some integer representing the amount of bytes the process requires): ")),
+            int(input("Enter Scheduling Info (Should be some integer corresponding to how high priority this process is, the lower the number the higher the priority): ")),
+            int(input("Enter Accounting Info (Should be some integer representing how much time this process needs to run): ")),
+            input("Enter Process State (Should be a string representing the state of the process, should be initialized as 'NEW'): "),
+            input("Enter Parent PID (Should be the PID of the parent process or None if there is no parent): "),
+            input("Enter Children PID (Should be the PID of the child process or None if there are no children): "),
+            input("Enter Other Resources (Should be a string of any other system resources needed by the process): "),
+            int(input("Enter Arrival Time (Should be an integer >= 0 representing the time at which the process arrives in the system): ")),
+            int(input("Enter CPU Required (Should be an integer > 0 representing the amount of CPU time required by the process): "))
+            )
+                        
+            print("\n")
+            
+            #Check if the new PID is already in the list of existing PCBs
+            existing_pids = {pcb.p_id for pcb in pcb_list}
+            if NEW_PCB.p_id in existing_pids:
+                print(f"Error: PID {NEW_PCB.p_id} already exists. Please enter a unique PID.")
+            elif not validate_pcb_data([NEW_PCB]):
+                print("Invalid PCB data. Please try again.")
+            else:
+                valid = True  #The new PCB is valid and can be added to the list of PCBs
+        
+
 
         PCB_3_choice = input("New PCB created, would you like to store it in a file? (Y/N): ").upper()
         while PCB_3_choice != "Y" and PCB_3_choice != "N":

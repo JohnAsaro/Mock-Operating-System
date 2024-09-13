@@ -152,6 +152,14 @@ def validate_pcb_data(pcb_list): #Check to see if the data in the PCBs is valid
     #Collect all valid p_id values from the PCB list
     valid_pids = {pcb.p_id for pcb in pcb_list}
 
+    #Check for duplicate p_id values
+    seen_pids = set()
+    for pcb in pcb_list:
+        if pcb.p_id in seen_pids:
+            print(f"Error: Duplicate PID found for PCB with ID {pcb.p_id}")
+            valid = False
+        seen_pids.add(pcb.p_id)
+
     for pcb in pcb_list:
         if isinstance(pcb.p_id, int) == False:
             print(f"Error: Invalid PID for PCB with ID {pcb.p_id}")
