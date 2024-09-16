@@ -55,7 +55,7 @@ def menu(): #Display menu options
             int(input("Enter Accounting Info (Should be some integer representing how much time this process needs to run): ")),
             input("Enter Process State (Should be a string representing the state of the process, should be initialized as 'NEW'): "),
             None if (parent_input := input("Enter Parent PID (Should be the PID of the parent process or None if there is no parent): ")) == "None" else int(parent_input),
-            None if (child_input := input("Enter Parent PID (Should be the PID of the child process or None if there is no parent): ")) == "None" else int(child_input),            input("Enter Other Resources (Should be a string of any other system resources needed by the process): "),
+            None if (child_input := input("Enter Child PID (Should be the PID of the child process or None if there is no parent): ")) == "None" else int(child_input),            input("Enter Other Resources (Should be a string of any other system resources needed by the process): "),
             int(input("Enter Arrival Time (Should be an integer >= 0 representing the time at which the process arrives in the system): ")),
             int(input("Enter CPU Required (Should be an integer > 0 representing the amount of CPU time required by the process): "))
             )
