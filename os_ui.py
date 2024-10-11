@@ -1,5 +1,6 @@
 from pathfinder import filefinder
 from pcb import PCB, read_pcb_data, display_pcbs, validate_pcb_data
+from scheduler import scheduler
 
 def boot(): #Display a welcome message and call menu function
     print("Welcome to John-OS!", end="\n")
@@ -8,15 +9,27 @@ def boot(): #Display a welcome message and call menu function
     print("  __  / / __ \/ __ \/ __ \______/ / / /\__ \ ", end="\n")
     print(" / /_/ / /_/ / / / / / / /_____/ /_/ /___/ /", end="\n") 
     print(" \____/\____/_/ /_/_/ /_/      \____//____/", end="\n\n")
-    menu()
+    
+    os_scheduler = scheduler(read_pcb_data(filefinder("os_pcbs.txt"))) #Create a scheduler object with the PCBs from os_pcbs.txt, which simulates the pcbs stored in memory
+    menu(os_scheduler)  #Call the menu function with the scheduler object as an argument
 
-def menu(): #Display menu options
+def menu(os_scheduler): 
+    """
+    Display menu options and call the appropriate function based on the user's choice.
+
+    Args:
+        os_scheduler (scheduler): The scheduler object to be used in the menu.
+    """
+
     print("What is your choice?", end="\n")
     print("[1] Read PCB data from a file", end="\n")
     print("[2] Validate data for a PCB/list of PCB's", end="\n")
     print("[3] Create a new PCB from UI", end="\n")
-    print("[4] Display all stored PCBs", end="\n")
-    print("[5] Exit", end="\n")
+    print("[4] Display all stored PCBs (in the order they are scheduled to be run)", end="\n")
+    print("[5] Run PCB's from memory", end="\n")
+    print("[6] Change scheduling algorithm", end="\n")
+    print("[7] Switch between preempetive and non-preemptive scheduling", end="\n")
+    print("[8] Exit", end="\n")
 
     choice = input("Enter the number corresponding to your choice: ")
 
@@ -57,7 +70,7 @@ def menu(): #Display menu options
             None if (parent_input := input("Enter Parent PID (Should be the PID of the parent process or None if there is no parent): ")) == "None" else int(parent_input),
             None if (child_input := input("Enter Child PID (Should be the PID of the child process or None if there is no parent): ")) == "None" else int(child_input),            input("Enter Other Resources (Should be a string of any other system resources needed by the process): "),
             int(input("Enter Arrival Time (Should be an integer >= 0 representing the time at which the process arrives in the system): ")),
-            int(input("Enter CPU Required (Should be an integer > 0 representing the amount of CPU time required by the process): "))
+            int(input("Enter CPU Required (Should be an integer > 0 representing the amount of clock cycles required by the process): "))
             )
                         
             print("\n")
@@ -93,19 +106,149 @@ def menu(): #Display menu options
                     print("Your PCB has been stored in the file 'os_pcbs.txt'.")
     
     elif choice == "4":
-        pcb_data_file = filefinder("os_pcbs.txt")
-        pcb_list = read_pcb_data(pcb_data_file)
-        display_pcbs(pcb_list)
-    
+        os_scheduler.print_pcb_list()
+
     elif choice == "5":
+        print("Running PCBs from memory...")
+        
+        clock_cycle = 0 #Initialize the clock cycle to 0
+        pcb_list = os_scheduler.pcb_list
+        backup_pcb_list = pcb_list.copy() #Create a backup of the PCB list to restore it after running the PCBs   
+        number_of_pcbs = len(pcb_list) #Get the number of PCBs in memory (used to calculate average turnaround time)
+        total_turnaround_time = 0 #Initialize the total turnaround time to 0
+
+        while pcb_list: #While there are still PCBs in memory
+
+            if os_scheduler.preemptive_or_non == "Preemptive": #If the scheduling is preemptive, we evaluate the PCBs at each clock cycle
+                for pcb in pcb_list:
+                    if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
+                        print(f"Running PCB {pcb.p_id}...")
+                        pcb.cpu_state = 1 #Set the CPU state to 1 (running)
+                       
+                        if pcb.cpu_required > 0: #If the PCB has more clock cycles remaining
+                            print(f"PCB {pcb.p_id} has {pcb.cpu_required} clock cycles remaining.")
+                     
+                        pcb.cpu_required -= 1 #Run the process for one clock cycle
+                        clock_cycle += 1 #Increment the clock cycle
+
+                        if pcb.cpu_required == 0:
+                            pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
+                            pcb_list.remove(pcb) #Remove the PCB from memory
+                            turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
+                            total_turnaround_time += turnaround_time #Add to total turnaround time
+                            print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
+
+                        break #Move on to the next PCB
+
+            os_scheduler.organize_pcb_list() #Reorganize the PCB list based on the scheduling info
+
+            if os_scheduler.preemptive_or_non == "Non-Preemptive": #If the scheduling is non-preemptive, we run each process until completion
+                for pcb in pcb_list:
+                    if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
+                        print(f"Running PCB {pcb.p_id}...")
+                        pcb.cpu_state = 1 #Set the CPU state to 1 (running)
+
+                        while pcb.cpu_required > 0: #Run the process until it is complete
+                            print(f"PCB {pcb.p_id} has {pcb.cpu_required} clock cycles remaining.")
+    
+                            pcb.cpu_required -= 1 #Run the process for one clock cycle
+                            clock_cycle += 1 #Increment the clock cycle
+
+                        turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
+                        total_turnaround_time += turnaround_time #Add to total turnaround time
+                        print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
+
+                        pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
+                        pcb_list.remove(pcb) #Remove the PCB from memory
+                        break #Move on to the next PCB
+                        #No need to reschedule the PCBs each PCB is run to completion
+            
+            average_turnaround_time = total_turnaround_time / number_of_pcbs #Calculate the average turnaround time
+            print(f"Average turnaround time: {average_turnaround_time} clock cycles.")
+            print("All PCBs have been run from memory.")
+
+        #Ask the user if they want to clear the PCBs or restore them
+        PCB_5_choice = input("Would you like to clear os_pcbs.txt [1] or would you like to restore the PCB list to its previous state [2]? ")
+
+        while PCB_5_choice != "1" and PCB_5_choice != "2":
+            PCB_5_choice = input("Invalid input. Please enter '1' or '2': ")
+
+        if PCB_5_choice == "1":
+            print("Warning, this action is destructive and will overwrite the current PCBs in memory. The contents will be saved to backup_os_pcbs.txt.")
+            PCB_5_choice_2 = input("Do you wish to continue? (Y/N): ").upper()
+
+            while PCB_5_choice_2 != "Y" and PCB_5_choice_2 != "N":
+                PCB_5_choice_2 = input("Invalid input. Please enter 'Y' or 'N': ").upper()
+
+            if PCB_5_choice_2 == "Y":
+                #Step 1: Backup current os_pcbs.txt to backup_os_pcbs.txt
+                with open("os_pcbs.txt", "r") as original_file:
+                    data = original_file.read()
+                with open("backup_os_pcbs.txt", "w") as backup_file:
+                    backup_file.write(data)
+                print("os_pcbs.txt has been backed up to backup_os_pcbs.txt.")
+
+                #Step 2: Clear os_pcbs.txt
+                with open("os_pcbs.txt", "w") as file:
+                    file.write("#PCB's stored in the memory of the OS\n\n\n") #Template for the memory file with header
+                print("os_pcbs.txt has been cleared.")
+            else: #if PCB_5_choice_2 == "N"
+                #Restore the PCBs from the backup if the user chooses not to clear them
+                os_scheduler.swap_pcb_list(backup_pcb_list) #Restore the PCB list from the backup
+                print("Your PCB list has been restored.")
+
+        else: #if PCB_5_choice == "2"
+            #Restore the PCBs from the backup if the user chooses not to clear them
+            os_scheduler.swap_pcb_list(backup_pcb_list) #Restore the PCB list from the backup
+            print("Your PCB list has been restored.")
+        
+
+    elif choice == "6":
+        print("The scheduling algorithm choices are FCFS (First Come, First Serve) and SJF (Shortest Job First).")
+        print(f"The current scheduling algorithm is {os_scheduler.schedule_mode}.")
+
+        if(os_scheduler.schedule_mode == "FCFS"):
+            newmode = "SJF"  #If the current mode is FCFS, the new mode will be SJF
+        else:
+            newmode = "FCFS" #If the current mode is SJF, the new mode will be FCFS
+        
+        PCB_6_choice = input(f"Would you like to change the scheduling algorithm to {newmode}? (Y/N): ").upper()
+        while PCB_6_choice != "Y" and PCB_6_choice != "N":
+            PCB_6_choice = input("Invalid input. Please enter (Y/N): ").upper()
+        
+        if PCB_6_choice == "Y":
+            os_scheduler.change_schedule_mode(newmode)
+            print(f"Scheduling algorithm changed to {newmode}.")
+        else:
+            print(f"Scheduling algorithm remains as {os_scheduler.schedule_mode}.")
+
+    elif choice == "7":
+        print("The scheduling choices are Preemptive and Non-Preemptive.")
+        print(f"The current scheduling is {os_scheduler.preemptive_or_non}.")
+
+        if(os_scheduler.preemptive_or_non == "Preemptive"):
+            newmode = "Non-Preemptive" #If the current mode is Preemptive, the new mode will be Non-Preemptive
+        else:
+            newmode = "Preemptive" #If the current mode is Non-Preemptive, the new mode will be Preemptive
+
+        PCB_7_choice = input(f"Would you like to change the scheduling to {newmode}? (Y/N): ").upper()
+        while PCB_7_choice != "Y" and PCB_7_choice != "N":
+            PCB_7_choice = input("Invalid input. Please enter (Y/N): ").upper()
+        
+        if PCB_7_choice == "Y":
+            os_scheduler.switch_pre_non_pre(newmode)
+            print(f"Scheduling changed to {newmode}.")
+        else:
+            print(f"Scheduling remains as {os_scheduler.preemptive_or_non}.")
+
+    elif choice == "8":
         print("Goodbye!")
         exit()
     
     else:
-        print("Invalid input. Please enter a number between 1 and 5.")
-        menu()
+        print("Invalid input. Please enter a number between 1 and 8.")
     
-    menu()
+    menu(os_scheduler)
 
 #Call the boot function when the program is run
 if __name__ == "__main__": 

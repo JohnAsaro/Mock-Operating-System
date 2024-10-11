@@ -29,11 +29,11 @@ class PCB:
         self.children = children #p_id, pointer to/p_id of the child process, should be None if this process has no children
         self.other_resources = other_resources #STRING, string of the other system resources needed by the process
         self.arrival_time = arrival_time  #INT, should be some integer >= 0 time at which the process arrives in the system
-        self.cpu_required = cpu_required #INT, should be some integer > 0 amount of CPU time required by the process
+        self.cpu_required = cpu_required #INT, should be some integer > 0, the amount of clock cycles the process needs to run
         self.quantum = 3  #INT, should be some integer > 0 size of the quantum, the size should be the same for all processes
         self.context_switch_penalty = 1 #INT, should be some integer > 0 cost of switching to a specific process, the cost should be the same for all processes
         self.open_files = open_files #Used with open_file as a pointer to the file handler
-
+        
 
     def __str__(self): #String representation of the PCB, if printed is a lot cleaner than if this wasn't here
         return f"PCB({self.p_id}, {self.cpu_state}, {self.memory}, {self.scheduling_info}, {self.accounting_info}, {self.process_state}, {self.parent}, {self.children}, {self.open_files}, {self.other_resources}, {self.arrival_time}, {self.cpu_required}, {self.quantum}, {self.context_switch_penalty})"
@@ -73,15 +73,15 @@ def read_pcb_data(file_path):
     try:
         with open(file_path, 'r') as file:
             for line in file:
-                # Skip empty lines or lines that start with 'Data Set'
-                if line.strip() and not line.startswith("Data Set"):
+                #Skip empty lines, lines that start with 'Data Set', and lines that start with '#', as they are comments
+                if line.strip() and not line.startswith("Data Set")  and not line.startswith("#"):
                     data = line.strip().split()
 
-                    # Validate that the data line has the correct number of fields (13 fields based on your updated PCB class)
+                    #Validate that the data line has the correct number of fields (13 fields based on your updated PCB class)
                     if len(data) != 11:
                         raise ValueError(f"Incorrect data format in line: {line.strip()}")
-
-                    # Parse the data into appropriate types
+                    
+                    #Parse the data into appropriate types
                     p_id = int(data[0])
                     cpu_state = int(data[1])
                     memory = int(data[2])
