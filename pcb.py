@@ -3,8 +3,10 @@ from pathfinder import filefinder
 #PCB class
 class PCB:
     def __init__(self, p_id, cpu_state, memory, scheduling_info, accounting_info, process_state, parent, children, other_resources, arrival_time, cpu_required, open_files = None):
-        """PCB class to represent a process control block.
-        Args:
+        """
+        PCB class to represent a process control block.
+     
+           Args:
             p_id (int): Process Identifier (PID), should be some unique integer.
             cpu_state (int): Inital CPU state, should be 0 when initalized.
             memory (int): Memory required by the process, should be some integer representing the amount of bytes the process requires.

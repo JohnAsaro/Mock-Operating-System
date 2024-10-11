@@ -1,6 +1,7 @@
 from pathfinder import filefinder
 from pcb import PCB, read_pcb_data, display_pcbs, validate_pcb_data
 from scheduler import scheduler
+import time
 
 def boot(): #Display a welcome message and call menu function
     print("Welcome to John-OS!", end="\n")
@@ -113,94 +114,103 @@ def menu(os_scheduler):
         
         clock_cycle = 0 #Initialize the clock cycle to 0
         pcb_list = os_scheduler.pcb_list
-        backup_pcb_list = pcb_list.copy() #Create a backup of the PCB list to restore it after running the PCBs   
+        #backup_pcb_list = pcb_list.copy() #Create a backup of the PCB list to restore it after running the PCBs   
         number_of_pcbs = len(pcb_list) #Get the number of PCBs in memory (used to calculate average turnaround time)
         total_turnaround_time = 0 #Initialize the total turnaround time to 0
 
-        while pcb_list: #While there are still PCBs in memory
+        if number_of_pcbs == 0: #If there are no PCBs in memory
+            print("There are no PCBs in memory.")
+        else:
+            while pcb_list: #While there are still PCBs in memory
 
-            if os_scheduler.preemptive_or_non == "Preemptive": #If the scheduling is preemptive, we evaluate the PCBs at each clock cycle
-                for pcb in pcb_list:
-                    if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
-                        print(f"Running PCB {pcb.p_id}...")
-                        pcb.cpu_state = 1 #Set the CPU state to 1 (running)
-                       
-                        if pcb.cpu_required > 0: #If the PCB has more clock cycles remaining
-                            print(f"PCB {pcb.p_id} has {pcb.cpu_required} clock cycles remaining.")
-                     
-                        pcb.cpu_required -= 1 #Run the process for one clock cycle
-                        clock_cycle += 1 #Increment the clock cycle
-
-                        if pcb.cpu_required == 0:
-                            pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
-                            pcb_list.remove(pcb) #Remove the PCB from memory
-                            turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
-                            total_turnaround_time += turnaround_time #Add to total turnaround time
-                            print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
-
-                        break #Move on to the next PCB
-
-            os_scheduler.organize_pcb_list() #Reorganize the PCB list based on the scheduling info
-
-            if os_scheduler.preemptive_or_non == "Non-Preemptive": #If the scheduling is non-preemptive, we run each process until completion
-                for pcb in pcb_list:
-                    if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
-                        print(f"Running PCB {pcb.p_id}...")
-                        pcb.cpu_state = 1 #Set the CPU state to 1 (running)
-
-                        while pcb.cpu_required > 0: #Run the process until it is complete
-                            print(f"PCB {pcb.p_id} has {pcb.cpu_required} clock cycles remaining.")
-    
+                if os_scheduler.preemptive_or_non == "Preemptive": #If the scheduling is preemptive, we evaluate the PCBs at each clock cycle
+                    for pcb in pcb_list:
+                        if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
+                            print(f"Running PCB {pcb.p_id}...")
+                            pcb.cpu_state = 1 #Set the CPU state to 1 (running)
+                        
+                            if pcb.cpu_required > 0: #If the PCB has more clock cycles remaining
+                                print(f"PCB {pcb.p_id} has {pcb.cpu_required} clock cycles remaining.")
+                        
                             pcb.cpu_required -= 1 #Run the process for one clock cycle
                             clock_cycle += 1 #Increment the clock cycle
 
-                        turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
-                        total_turnaround_time += turnaround_time #Add to total turnaround time
-                        print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
+                            if pcb.cpu_required == 0:
+                                pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
+                                pcb_list.remove(pcb) #Remove the PCB from memory
+                                turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
+                                total_turnaround_time += turnaround_time #Add to total turnaround time
+                                print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
+                            
+                            time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
+                            break #Move on to the next PCB
 
-                        pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
-                        pcb_list.remove(pcb) #Remove the PCB from memory
-                        break #Move on to the next PCB
-                        #No need to reschedule the PCBs each PCB is run to completion
+                    os_scheduler.organize_pcb_list() #Reorganize the PCB list based on the scheduling info
+
+                    if os_scheduler.preemptive_or_non == "Non-Preemptive": #If the scheduling is non-preemptive, we run each process until completion
+                        for pcb in pcb_list:
+                            if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
+                                print(f"Running PCB {pcb.p_id}...")
+                                pcb.cpu_state = 1 #Set the CPU state to 1 (running)
+
+                                while pcb.cpu_required > 0: #Run the process until it is complete
+                                    print(f"PCB {pcb.p_id} has {pcb.cpu_required} clock cycles remaining.")
             
+                                    pcb.cpu_required -= 1 #Run the process for one clock cycle
+                                    clock_cycle += 1 #Increment the clock cycle
+
+                                turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
+                                total_turnaround_time += turnaround_time #Add to total turnaround time
+                                print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
+
+                                pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
+                                pcb_list.remove(pcb) #Remove the PCB from memory
+
+                                time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
+                                break #Move on to the next PCB
+                                #No need to reschedule the PCBs each PCB is run to completion
+                
             average_turnaround_time = total_turnaround_time / number_of_pcbs #Calculate the average turnaround time
             print(f"Average turnaround time: {average_turnaround_time} clock cycles.")
             print("All PCBs have been run from memory.")
 
-        #Ask the user if they want to clear the PCBs or restore them
-        PCB_5_choice = input("Would you like to clear os_pcbs.txt [1] or would you like to restore the PCB list to its previous state [2]? ")
+            #Ask the user if they want to clear the PCBs or restore them
+            PCB_5_choice = input("Would you like to clear os_pcbs.txt [1] or would you like to restore the PCB list to its previous state [2]? ")
 
-        while PCB_5_choice != "1" and PCB_5_choice != "2":
-            PCB_5_choice = input("Invalid input. Please enter '1' or '2': ")
+            while PCB_5_choice != "1" and PCB_5_choice != "2":
+                PCB_5_choice = input("Invalid input. Please enter '1' or '2': ")
 
-        if PCB_5_choice == "1":
-            print("Warning, this action is destructive and will overwrite the current PCBs in memory. The contents will be saved to backup_os_pcbs.txt.")
-            PCB_5_choice_2 = input("Do you wish to continue? (Y/N): ").upper()
+            if PCB_5_choice == "1":
+                print("Warning, this action is destructive and will overwrite the current PCBs in memory. The contents will be saved to backup_os_pcbs.txt.")
+                PCB_5_choice_2 = input("Do you wish to continue? (Y/N): ").upper()
 
-            while PCB_5_choice_2 != "Y" and PCB_5_choice_2 != "N":
-                PCB_5_choice_2 = input("Invalid input. Please enter 'Y' or 'N': ").upper()
+                while PCB_5_choice_2 != "Y" and PCB_5_choice_2 != "N":
+                    PCB_5_choice_2 = input("Invalid input. Please enter 'Y' or 'N': ").upper()
 
-            if PCB_5_choice_2 == "Y":
-                #Step 1: Backup current os_pcbs.txt to backup_os_pcbs.txt
-                with open("os_pcbs.txt", "r") as original_file:
-                    data = original_file.read()
-                with open("backup_os_pcbs.txt", "w") as backup_file:
-                    backup_file.write(data)
-                print("os_pcbs.txt has been backed up to backup_os_pcbs.txt.")
+                if PCB_5_choice_2 == "Y":
+                    original_file_path = filefinder("os_pcbs.txt")
+                    backup_file_path = filefinder("backup_os_pcbs.txt")
+                    
+                    #Step 1: Backup current os_pcbs.txt to backup_os_pcbs.txt
+                    with open(original_file_path, "r") as original_file:
+                        data = original_file.read()
+                    with open(backup_file_path, "w") as backup_file:
+                        backup_file.write(data)
+                    print("os_pcbs.txt has been backed up to backup_os_pcbs.txt.")
 
-                #Step 2: Clear os_pcbs.txt
-                with open("os_pcbs.txt", "w") as file:
-                    file.write("#PCB's stored in the memory of the OS\n\n\n") #Template for the memory file with header
-                print("os_pcbs.txt has been cleared.")
-            else: #if PCB_5_choice_2 == "N"
+                    #Step 2: Clear os_pcbs.txt
+                    with open(original_file_path, "w") as file:
+                        file.write("#PCB's stored in the memory of the OS\n\n") #Template for the memory file with header
+                    print("os_pcbs.txt has been cleared.")
+                else: #if PCB_5_choice_2 == "N"
+                    #Restore the PCBs from the backup if the user chooses not to clear them
+                    os_scheduler.swap_pcb_list(read_pcb_data(filefinder("os_pcbs.txt"))) #Restore the PCB list from the memory
+                    print("Your PCB list has been restored.")
+
+            else: #if PCB_5_choice == "2"
                 #Restore the PCBs from the backup if the user chooses not to clear them
-                os_scheduler.swap_pcb_list(backup_pcb_list) #Restore the PCB list from the backup
+                os_scheduler.swap_pcb_list(read_pcb_data(filefinder("os_pcbs.txt"))) #Restore the PCB list from the memory
                 print("Your PCB list has been restored.")
-
-        else: #if PCB_5_choice == "2"
-            #Restore the PCBs from the backup if the user chooses not to clear them
-            os_scheduler.swap_pcb_list(backup_pcb_list) #Restore the PCB list from the backup
-            print("Your PCB list has been restored.")
         
 
     elif choice == "6":

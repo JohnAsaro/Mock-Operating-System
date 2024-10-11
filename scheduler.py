@@ -10,6 +10,11 @@ class scheduler:
     #Each time a PCB is removed from memory, we call the scheduler to remove it from the queue and reorganize memory
     
     def __init__(self, pcb_list):
+        """ 
+        Scheduler class to schedule PCBs in the OS
+        Args: 
+            pcb_list (list): List of PCBs to be scheduled
+        """
         self.pcb_list = pcb_list #List of PCBs to be scheduled
         self.schedule_mode = "FCFS" #String value represents the scheduling mode, can be FCFS or SJF
         self.preemptive_or_non = "Preemptive" #String value represents the scheduling mode, can be Non-preemptive or Preemptive
@@ -20,11 +25,21 @@ class scheduler:
 
     #Method to add a PCB to the scheduler
     def add_single_pcb(self, pcb):
+        """ 
+        Add a single PCB to the scheduler
+        Args:
+            pcb (PCB): PCB to be added to the scheduler
+        """
         self.pcb_list.append(pcb)
         self.organize_pcb_list()
 
     #Method to remove a PCB from the scheduler
     def remove_pcb(self, pcb):
+        """ 
+        Remove a PCB from the scheduler
+        Args:
+            pcb (PCB): PCB to be removed from the scheduler
+        """
         self.pcb_list.remove(pcb)
         self.organize_pcb_list()
     
@@ -39,6 +54,11 @@ class scheduler:
         
     #Method to change the scheduling mode
     def change_schedule_mode(self, schedule_mode):
+        """ 
+        Change the scheduling mode of the scheduler
+        Args:
+            schedule_mode (str): Scheduling mode to change to, can be "FCFS" or "SJF"
+        """
         if(schedule_mode != "FCFS" and schedule_mode != "SJF"):
             print('Invalid mode. Please enter either "FCFS" or "SJF".')
         else:
@@ -47,6 +67,11 @@ class scheduler:
 
     #Method to change between preemptive and non-preemptive scheduling
     def switch_pre_non_pre(self, mode):
+        """
+        Change the scheduling method of the scheduler
+        Args:
+            mode (str): Scheduling mode to change to, can be "Preemptive" or "Non-Preemptive"
+        """
         if(mode != "Preemptive" and mode != "Non-Preemptive"):
             print('Invalid mode. Please enter either "Preemptive" or "Non-Preemptive".')
         else:
@@ -60,4 +85,9 @@ class scheduler:
     
     #Method to quickly swap the PCB list
     def swap_pcb_list(self, new_pcb_list):
+        """
+        Quickly swap the PCB list with a new list
+        Args:
+            new_pcb_list (list): New list of PCBs to replace the current list
+        """
         self.pcb_list = new_pcb_list
