@@ -142,33 +142,33 @@ def menu(os_scheduler):
                                 total_turnaround_time += turnaround_time #Add to total turnaround time
                                 print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
                             
-                            time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
+                            time.sleep(0.0) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
                             break #Move on to the next PCB
 
                     os_scheduler.organize_pcb_list() #Reorganize the PCB list based on the scheduling info
 
-                    if os_scheduler.preemptive_or_non == "Non-Preemptive": #If the scheduling is non-preemptive, we run each process until completion
-                        for pcb in pcb_list:
-                            if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
-                                print(f"Running PCB {pcb.p_id}...")
-                                pcb.cpu_state = 1 #Set the CPU state to 1 (running)
+                if os_scheduler.preemptive_or_non == "Non-Preemptive": #If the scheduling is non-preemptive, we run each process until completion
+                    for pcb in pcb_list:
+                        if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
+                            print(f"Running PCB {pcb.p_id}...")
+                            pcb.cpu_state = 1 #Set the CPU state to 1 (running)
 
-                                while pcb.cpu_required > 0: #Run the process until it is complete
-                                    print(f"PCB {pcb.p_id} has {pcb.cpu_required} clock cycles remaining.")
-            
-                                    pcb.cpu_required -= 1 #Run the process for one clock cycle
-                                    clock_cycle += 1 #Increment the clock cycle
+                            while pcb.cpu_required > 0: #Run the process until it is complete
+                                print(f"PCB {pcb.p_id} has {pcb.cpu_required} clock cycles remaining.")
+        
+                                pcb.cpu_required -= 1 #Run the process for one clock cycle
+                                clock_cycle += 1 #Increment the clock cycle
 
-                                turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
-                                total_turnaround_time += turnaround_time #Add to total turnaround time
-                                print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
+                            turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
+                            total_turnaround_time += turnaround_time #Add to total turnaround time
+                            print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
 
-                                pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
-                                pcb_list.remove(pcb) #Remove the PCB from memory
+                            pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
+                            pcb_list.remove(pcb) #Remove the PCB from memory
 
-                                time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
-                                break #Move on to the next PCB
-                                #No need to reschedule the PCBs each PCB is run to completion
+                            time.sleep(0.0) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
+                            break #Move on to the next PCB
+                            #No need to reschedule the PCBs as each PCB is run to completion
                 
             average_turnaround_time = total_turnaround_time / number_of_pcbs #Calculate the average turnaround time
             print(f"Average turnaround time: {average_turnaround_time} clock cycles.")
