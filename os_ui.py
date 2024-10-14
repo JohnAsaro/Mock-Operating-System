@@ -142,7 +142,7 @@ def menu(os_scheduler):
                                 total_turnaround_time += turnaround_time #Add to total turnaround time
                                 print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
                             
-                            time.sleep(0.0) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
+                            time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
                             break #Move on to the next PCB
 
                     os_scheduler.organize_pcb_list() #Reorganize the PCB list based on the scheduling info
@@ -166,7 +166,7 @@ def menu(os_scheduler):
                             pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
                             pcb_list.remove(pcb) #Remove the PCB from memory
 
-                            time.sleep(0.0) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
+                            time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
                             break #Move on to the next PCB
                             #No need to reschedule the PCBs as each PCB is run to completion
                 
