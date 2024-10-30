@@ -2,7 +2,7 @@ from pathfinder import filefinder
 
 #PCB class
 class PCB:
-    def __init__(self, p_id, cpu_state, memory, scheduling_info, accounting_info, process_state, parent, children, other_resources, arrival_time, cpu_required, open_files = None):
+    def __init__(self, p_id, cpu_state, memory, scheduling_info, accounting_info, process_state, parent, children, other_resources, arrival_time, cpu_required, quantum, context_switch_penalty, open_files = None):
         """
         PCB class to represent a process control block.
      
@@ -18,6 +18,8 @@ class PCB:
             other_resources (str): String of the other system resources needed by the process.
             arrival_time (int): Should be some integer >= 0 time at which the process arrives in the system.
             cpu_required (int): Should be some integer > 0 amount of CPU time required by the process.
+            quantum (int): Should be some integer > 0 size of the quantum,  should be the same for all PCBs in memory.
+            context_switch_penalty (int): Should be some integer > 0 cost of switching to a specific process,  should be the same for all PCBs in memory.
             open_files (file): Used with open_file as a pointer to the file handler, starts as None as no file is open initally.
         """
         
@@ -32,8 +34,8 @@ class PCB:
         self.other_resources = other_resources #STRING, string of the other system resources needed by the process
         self.arrival_time = arrival_time  #INT, should be some integer >= 0 time at which the process arrives in the system
         self.cpu_required = cpu_required #INT, should be some integer > 0, the amount of clock cycles the process needs to run
-        self.quantum = 3  #INT, should be some integer > 0 size of the quantum, the size should be the same for all processes
-        self.context_switch_penalty = 1 #INT, should be some integer > 0 cost of switching to a specific process, the cost should be the same for all processes
+        self.quantum = quantum  #INT, should be some integer > 0 size of the quantum, the size should be the same for all processes, should be the same for all PCBs in memory
+        self.context_switch_penalty = context_switch_penalty #INT, should be some integer > 0 cost of switching to a specific process, should be the same for all PCBs in memory
         self.open_files = open_files #Used with open_file as a pointer to the file handler
         
 
@@ -79,8 +81,8 @@ def read_pcb_data(file_path):
                 if line.strip() and not line.startswith("Data Set")  and not line.startswith("#"):
                     data = line.strip().split()
 
-                    #Validate that the data line has the correct number of fields (13 fields based on your updated PCB class)
-                    if len(data) != 11:
+                    #Validate that the data line has the correct number of fields
+                    if len(data) != 13:
                         raise ValueError(f"Incorrect data format in line: {line.strip()}")
                     
                     #Parse the data into appropriate types
@@ -95,8 +97,9 @@ def read_pcb_data(file_path):
                     other_resources = data[8]
                     arrival_time = int(data[9])
                     cpu_required = int(data[10])
+                    quantum = int(data[11])
+                    context_switch_penalty = int(data[12]) 
                     #open_files, initally set to None, is not parsed from the file
-                    #quantum and context_switch_penalty are set to default values in the PCB constructor
 
                     #Create a new PCB object with the parsed data
                     pcb = PCB(
@@ -110,7 +113,9 @@ def read_pcb_data(file_path):
                         children=children,
                         other_resources=other_resources,
                         arrival_time=arrival_time,
-                        cpu_required=cpu_required
+                        cpu_required=cpu_required,
+                        quantum=quantum,
+                        context_switch_penalty=context_switch_penalty
                     )
 
                     #Append the created PCB object to the list

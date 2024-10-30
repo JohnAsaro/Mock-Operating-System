@@ -16,7 +16,7 @@ class scheduler:
             pcb_list (list): List of PCBs to be scheduled
         """
         self.pcb_list = pcb_list #List of PCBs to be scheduled
-        self.schedule_mode = "FCFS" #String value represents the scheduling mode, can be FCFS or SJF
+        self.schedule_mode = "FCFS" #String value represents the scheduling mode, can be FCFS, SJF, or RR
         self.preemptive_or_non = "Preemptive" #String value represents the scheduling mode, can be Non-preemptive or Preemptive
         self.organize_pcb_list() #Organize the PCB list based on the scheduling info
 
@@ -45,8 +45,8 @@ class scheduler:
     
     #Method to organize the PCB list based on the scheduling info
     def organize_pcb_list(self):
-        if self.schedule_mode == "FCFS":
-            #Sort by Arrival Time (First Come, First Serve), and then by p_id to break ties (lower PID first)
+        if self.schedule_mode in ["FCFS", "RR"]:
+            #Sort by Arrival Time (First Come, First Serve), and then by p_id to break ties (lower PID first), RR without considering the quantum is just FCFS, so we initially set up our list in FCFS order, considering the quantum when we run the PCBS
             self.pcb_list.sort(key=lambda pcb: (pcb.arrival_time, pcb.p_id))
         elif self.schedule_mode == "SJF":
             #Sort by CPU required (Shortest Job First), and then by p_id to break ties (lower PID first)
@@ -57,10 +57,11 @@ class scheduler:
         """ 
         Change the scheduling mode of the scheduler
         Args:
-            schedule_mode (str): Scheduling mode to change to, can be "FCFS" or "SJF"
+            schedule_mode (str): Scheduling mode to change to, any mode contained within "valid_modes"
         """
-        if(schedule_mode != "FCFS" and schedule_mode != "SJF"):
-            print('Invalid mode. Please enter either "FCFS" or "SJF".')
+        valid_modes = ["FCFS", "SJF", "RR"]
+        if schedule_mode not in valid_modes:
+            print('Invalid mode. Please enter either "FCFS", "SJF" or "RR".')
         else:
             self.schedule_mode = schedule_mode
         self.organize_pcb_list()

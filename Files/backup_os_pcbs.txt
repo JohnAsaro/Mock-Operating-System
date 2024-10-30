@@ -1,2 +1,7 @@
 #PCB's stored in the memory of the OS
 
+1 0 2000 1 0 "new" None None NONE 0 4 3 1
+2 0 4000 1 0 "new" None None NONE 1 1 3 1
+3 0 12000 2 0 "new" None None NONE 2 2 3 1
+4 0 500 3 0 "new" None None NONE 3 2 3 1
+5 0 500 3 0 "new" None None NONE 4 4 3 1
