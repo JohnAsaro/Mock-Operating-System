@@ -143,19 +143,16 @@ def menu(os_scheduler):
                                         if pcb.cpu_required == 0:
                                             pcb_list.remove(pcb)
                                             break       
-                            clock_cycle += pcb.context_switch_penalty #Increment the clock cycle by the context switch penalty
                     else:
                         for pcb in pcb_list:
                             if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
                                 did_something = True
                                 if cycles_waiting > 0: #If we have waited for PCBs to arrive
                                     print(f"We wait for {cycles_waiting} clock cycles for a PCB to arrive.")
-                                    clock_cycle += pcb.context_switch_penalty #Increment the clock cycle by the context switch penalty
                                     cycles_waiting = 0 #Reset the cycles_waiting counter
                                 
                                 if pcb.p_id != last_pid: #If the PID is different from the last PID printed
                                     print(pcb)
-                                    clock_cycle += pcb.context_switch_penalty #Increment the clock cycle by the context switch penalty
                                     last_pid = pcb.p_id
                                  
                                 pcb.cpu_required -= 1 #Run the process for one clock cycle
@@ -216,7 +213,7 @@ def menu(os_scheduler):
         context_switch_score = 0 #We start with 0 context switch score
         did_something = False #To see if we did something this clock cycle
         current_pcb = None #To keep track of the current PCB being run
-        finished_task = False #Used so we don't add to the context switch penalty if the task is finished
+        output_list = [] #To keep track of the output for each clock cycle
 
         if number_of_pcbs == 0: #If there are no PCBs in memory
             print("There are no PCBs stored in memory.")
@@ -236,6 +233,7 @@ def menu(os_scheduler):
                                         print(f"PCB {pcb.p_id} has {pcb.cpu_required} clock cycles remaining.")
                                         pcb.cpu_required -= 1 #Run the process for one clock cycle
                                         clock_cycle += 1 #Increment the clock cycle
+                                        output_list.append(f"P{pcb.p_id}") #Add the PCB to the output list
                                         time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
                                         if pcb.cpu_required == 0:
                                             pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
@@ -243,13 +241,9 @@ def menu(os_scheduler):
                                             turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
                                             total_turnaround_time += turnaround_time
                                             print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
-                                            finished_task = True #Set finished_task to True so we don't add to the context switch penalty
                                             break
-                            if finished_task == False: #If we are context switching
-                                context_switches += 1 #Increment the context switch counter
-                                context_switch_score += 1*pcb.context_switch_penalty #Add to the context switch score
-                                clock_cycle += pcb.context_switch_penalty #Increment the clock cycle by the context switch penalty
-                            finished_task = False #Reset finished_task
+                            context_switches += 1 #Increment the context switch counter
+                            context_switch_score += 1*pcb.context_switch_penalty #Add to the context switch score
                             #Move on to next PCB        
                     else:
                         for pcb in pcb_list:
@@ -257,10 +251,8 @@ def menu(os_scheduler):
                                 did_something = True
                                 if current_pcb != None and current_pcb != pcb: #If the current PCB is not the same as the PCB we are evaluating
                                     print(f"Running PCB {pcb.p_id}...")
-                                    if finished_task == False: #and the task is not finished
-                                        context_switches += 1 #We did a context switch
-                                        context_switch_score += 1*current_pcb.context_switch_penalty #Add to the context switch score
-                                        clock_cycle += current_pcb.context_switch_penalty #Increment the clock cycle by the context switch penalty
+                                    context_switches += 1 #We did a context switch
+                                    context_switch_score += 1*current_pcb.context_switch_penalty #Add to the context switch score
                                 current_pcb = pcb
                                 pcb.cpu_state = 1 #Set the CPU state to 1 (running)
 
@@ -269,16 +261,15 @@ def menu(os_scheduler):
                             
                                 pcb.cpu_required -= 1 #Run the process for one clock cycle
                                 clock_cycle += 1 #Increment the clock cycle
+                                output_list.append(f"P{pcb.p_id}") #Add the PCB to the output list
 
                                 if pcb.cpu_required == 0:
                                     pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
                                     pcb_list.remove(pcb) #Remove the PCB from memory
                                     turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
                                     total_turnaround_time += turnaround_time #Add to total turnaround time
-                                    finished_task = True #Set finished_task to True so we don't add to the context switch penalty
                                     print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
-                                else:
-                                    finished_task = False #Reset finished_task
+    
                                 
                                 time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
                                 break #Move on to the next PCB
@@ -288,6 +279,7 @@ def menu(os_scheduler):
                     if did_something == False: #If we didint do anything this clock cycle, we must wait for more PCBs to arrive
                         print(f"No PCBs available for clock cycle {clock_cycle}, moving on to next clock cycle.")
                         clock_cycle += 1 #Increment the clock cycle
+                        output_list.append("_") #Add the gap to the output list
                         time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
                     
                     did_something = False
@@ -304,6 +296,7 @@ def menu(os_scheduler):
         
                                 pcb.cpu_required -= 1 #Run the process for one clock cycle
                                 clock_cycle += 1 #Increment the clock cycle
+                                output_list.append(f"P{pcb.p_id}") #Add the PCB to the output list
 
                             turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
                             total_turnaround_time += turnaround_time #Add to total turnaround time
@@ -319,6 +312,7 @@ def menu(os_scheduler):
                     if did_something == False: #If we didint do anything this clock cycle, we must wait for more PCBs to arrive
                         print(f"No PCBs available for clock cycle {clock_cycle}, moving on to next clock cycle.")
                         clock_cycle += 1 #Increment the clock cycle
+                        output_list.append("_") #Add the gap to the output list
                         time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
                     
                     did_something = False
@@ -327,6 +321,10 @@ def menu(os_scheduler):
             print(f"Average turnaround time: {average_turnaround_time} clock cycles.")
             print(f"Total context switches: {context_switches}, Context switch score: {context_switch_score}.")
             print("All PCBs have been run from memory.")
+
+            #Convert output_list to a string
+            output_string = ''.join(map(str, output_list))
+            print(f"Scheduling order: {output_string}")
 
             #Ask the user if they want to clear the PCBs or restore them
             PCB_5_choice = input("Would you like to clear os_pcbs.txt [1] or would you like to restore the PCB list to its previous state [2]? ")
