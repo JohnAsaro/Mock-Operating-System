@@ -271,7 +271,7 @@ def menu(os_scheduler):
                                     print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
     
                                 
-                                time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
+                                time.sleep(.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
                                 break #Move on to the next PCB
                         os_scheduler.organize_pcb_list() #Reorganize the PCB list based on the scheduling info                            
 
@@ -289,6 +289,11 @@ def menu(os_scheduler):
                         if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
                             did_something = True
                             print(f"Running PCB {pcb.p_id}...")
+                            if current_pcb != None and current_pcb != pcb: #If the current PCB is not the same as the PCB we are evaluating
+                                    print(f"Running PCB {pcb.p_id}...")
+                                    context_switches += 1 #We did a context switch
+                                    context_switch_score += 1*current_pcb.context_switch_penalty #Add to the context switch score
+                            current_pcb = pcb
                             pcb.cpu_state = 1 #Set the CPU state to 1 (running)
 
                             while pcb.cpu_required > 0: #Run the process until it is complete
