@@ -1,6 +1,7 @@
 from pathfinder import filefinder
 from pcb import PCB, read_pcb_data, display_pcbs, validate_pcb_data
 from scheduler import scheduler
+from memory_manager import MemoryManager
 import time
 
 def boot(): #Display a welcome message and call menu function
@@ -12,9 +13,10 @@ def boot(): #Display a welcome message and call menu function
     print(" \____/\____/_/ /_/_/ /_/      \____//____/", end="\n\n")
     
     os_scheduler = scheduler(read_pcb_data(filefinder("os_pcbs.txt"))) #Create a scheduler object with the PCBs from os_pcbs.txt, which simulates the pcbs stored in memory
-    menu(os_scheduler)  #Call the menu function with the scheduler object as an argument
+    os_MM = MemoryManager(15000) #Create a memory manager object with 15000 locations
+    menu(os_scheduler, os_MM)  #Call the menu function with the scheduler object as an argument
 
-def menu(os_scheduler): 
+def menu(os_scheduler, os_MM): 
     """
     Display menu options and call the appropriate function based on the user's choice.
 
@@ -30,7 +32,8 @@ def menu(os_scheduler):
     print("[5] Run PCBs from memory", end="\n")
     print("[6] Change scheduling algorithm", end="\n")
     print("[7] Switch between preempetive and non-preemptive scheduling", end="\n")
-    print("[8] Exit", end="\n")
+    print("[8] Change memory manager algorithm", end="\n")
+    print("[9] Exit", end="\n")
 
     choice = input("Enter the number corresponding to your choice: ")
 
@@ -214,6 +217,7 @@ def menu(os_scheduler):
         did_something = False #To see if we did something this clock cycle
         current_pcb = None #To keep track of the current PCB being run
         output_list = [] #To keep track of the output for each clock cycle
+        started_pcbs = [] #To keep track of the PCBs that have started running
 
         if number_of_pcbs == 0: #If there are no PCBs in memory
             print("There are no PCBs stored in memory.")
@@ -225,14 +229,31 @@ def menu(os_scheduler):
                         for pcb in pcb_list:
                             if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
                                 did_something = True
-                                print(f"Running PCB {pcb.p_id}...")
+                                print(f"Running PCB {pcb.p_id} at clock cycle {clock_cycle}...")
+                                
+                                clock_cycle += 1 #Increment the clock cycle
+                            
+                                if pcb not in started_pcbs: #If the PCB is not yet running
+                                    if os_MM.allocate_memory(pcb) == False: #If we can allocate memory for the PCB
+                                        #Begin compaction
+                                        print(f"Memory allocation failed at clock cycle {clock_cycle}. Compacting memory...")
+                                        time.sleep(0.5) #Sleep for half of a second to give the user time to read the message
+                                        os_MM.compact_memory() 
+                                        if os_MM.allocate_memory(pcb) == False: #If memory compaction does not help
+                                            print("Memory allocation failed after compacting memory. Moving on to next PCB.")
+                                            time.sleep(0.5) #Sleep for half of a second to give the user time to read the message
+                                            continue #Move on to the next PCB, continue instead of break to move to the next pcb in line instead of restarting
+                                        else:
+                                            started_pcbs.append(pcb) #Add the PCB to the list of started PCBs
+                                    else:
+                                        started_pcbs.append(pcb) #Add the PCB to the list of started PCBs
+                                
                                 pcb.cpu_state = 1 #Set the CPU state to 1 (running)
 
                                 if pcb.cpu_required > 0: #If the PCB has more clock cycles remaining
                                     for _ in range(0, pcb.quantum): #Run the process for the quantum
                                         print(f"PCB {pcb.p_id} has {pcb.cpu_required} clock cycles remaining.")
                                         pcb.cpu_required -= 1 #Run the process for one clock cycle
-                                        clock_cycle += 1 #Increment the clock cycle
                                         output_list.append(f"P{pcb.p_id}") #Add the PCB to the output list
                                         time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
                                         if pcb.cpu_required == 0:
@@ -240,27 +261,48 @@ def menu(os_scheduler):
                                             pcb_list.remove(pcb)
                                             turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
                                             total_turnaround_time += turnaround_time
-                                            print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
+                                            print(f"PCB {pcb.p_id} has finished running with at clock cycle {clock_cycle} turnaround time of {turnaround_time} clock cycles.")
+                                            os_MM.deallocate_memory(pcb) #Deallocate memory for the PCB
                                             break
                             context_switches += 1 #Increment the context switch counter
                             context_switch_score += 1*pcb.context_switch_penalty #Add to the context switch score
                             #Move on to next PCB        
-                    else:
+
+                    else: #Preemptive SJF Scheduling
                         for pcb in pcb_list:
                             if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
                                 did_something = True
                                 if current_pcb != None and current_pcb != pcb: #If the current PCB is not the same as the PCB we are evaluating
-                                    print(f"Running PCB {pcb.p_id}...")
+                                    print(f"Running PCB {pcb.p_id} at clock cycle {clock_cycle}...")
                                     context_switches += 1 #We did a context switch
-                                    context_switch_score += 1*current_pcb.context_switch_penalty #Add to the context switch score
+                                    context_switch_score += 1*current_pcb.context_switch_penalty #Penalty for switching from the previous PCB
+                                elif current_pcb == None:
+                                    print(f"Running PCB {pcb.p_id} at clock cycle {clock_cycle}...")
                                 current_pcb = pcb
-                                pcb.cpu_state = 1 #Set the CPU state to 1 (running)
 
                                 if pcb.cpu_required > 0: #If the PCB has more clock cycles remaining
                                     print(f"PCB {pcb.p_id} has {pcb.cpu_required} clock cycles remaining.")
-                            
-                                pcb.cpu_required -= 1 #Run the process for one clock cycle
+
                                 clock_cycle += 1 #Increment the clock cycle
+
+                                if pcb not in started_pcbs: #If the PCB is not yet running
+                                    if os_MM.allocate_memory(pcb) == False: #If we can allocate memory for the PCB
+                                        #Begin compaction
+                                        print(f"Memory allocation failed at clock cycle {clock_cycle}. Compacting memory...")
+                                        time.sleep(0.5) #Sleep for half of a second to give the user time to read the message
+                                        os_MM.compact_memory() 
+                                        if os_MM.allocate_memory(pcb) == False: #If memory compaction does not help
+                                            print("Memory allocation failed after compacting memory. Moving on to next PCB.")
+                                            time.sleep(0.5) #Sleep for half of a second to give the user time to read the message
+                                            continue #Move on to the next PCB
+                                        else:
+                                            started_pcbs.append(pcb) #Add the PCB to the list of started PCBs
+                                    else:
+                                        started_pcbs.append(pcb) #Add the PCB to the list of started PCBs
+
+                                pcb.cpu_state = 1 #Set the CPU state to 1 (running)
+
+                                pcb.cpu_required -= 1 #Run the process for one clock cycle
                                 output_list.append(f"P{pcb.p_id}") #Add the PCB to the output list
 
                                 if pcb.cpu_required == 0:
@@ -268,11 +310,11 @@ def menu(os_scheduler):
                                     pcb_list.remove(pcb) #Remove the PCB from memory
                                     turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
                                     total_turnaround_time += turnaround_time #Add to total turnaround time
-                                    print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
-    
-                                
+                                    print(f"PCB {pcb.p_id} has finished running with at clock cycle {clock_cycle} turnaround time of {turnaround_time} clock cycles.")
+                                    os_MM.deallocate_memory(pcb) #Deallocate memory for the PCB
                                 time.sleep(.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
                                 break #Move on to the next PCB
+                        
                         os_scheduler.organize_pcb_list() #Reorganize the PCB list based on the scheduling info                            
 
                     
@@ -288,12 +330,32 @@ def menu(os_scheduler):
                     for pcb in pcb_list:
                         if pcb.arrival_time <= clock_cycle: #If the PCB has arrived
                             did_something = True
-                            print(f"Running PCB {pcb.p_id}...")
+                            print(f"Running PCB {pcb.p_id} at clock cycle {clock_cycle}...")
                             if current_pcb != None and current_pcb != pcb: #If the current PCB is not the same as the PCB we are evaluating
                                     print(f"Running PCB {pcb.p_id}...")
                                     context_switches += 1 #We did a context switch
-                                    context_switch_score += 1*current_pcb.context_switch_penalty #Add to the context switch score
+                                    context_switch_score += 1*current_pcb.context_switch_penalty #Penalty for switching from the previous PCB
+                            elif current_pcb == None:
+                                print(f"Running PCB {pcb.p_id} at clock cycle {clock_cycle}...")
+
                             current_pcb = pcb
+
+                            if pcb not in started_pcbs: #If the PCB is not yet running
+                                if os_MM.allocate_memory(pcb) == False: #If we can allocate memory for the PCB
+                                    #Begin compaction
+                                    print(f"Memory allocation failed at clock cycle {clock_cycle}. Compacting memory...")
+                                    time.sleep(0.5) #Sleep for half of a second to give the user time to read the message
+                                    os_MM.compact_memory() 
+                                    if os_MM.allocate_memory(pcb) == False: #If memory compaction does not help
+                                        print("Memory allocation failed after compacting memory. Moving on to next PCB.")
+                                        time.sleep(0.5) #Sleep for half of a second to give the user time to read the message
+                                        clock_cycle += 1 #Increment the clock cycle
+                                        continue #Move on to the next PCB
+                                    else:
+                                        started_pcbs.append(pcb) #Add the PCB to the list of started PCBs
+                                else:
+                                    started_pcbs.append(pcb) #Add the PCB to the list of started PCBs
+
                             pcb.cpu_state = 1 #Set the CPU state to 1 (running)
 
                             while pcb.cpu_required > 0: #Run the process until it is complete
@@ -305,8 +367,8 @@ def menu(os_scheduler):
 
                             turnaround_time = clock_cycle - pcb.arrival_time #Calculate the turnaround time for the PCB
                             total_turnaround_time += turnaround_time #Add to total turnaround time
-                            print(f"PCB {pcb.p_id} has finished running with a turnaround time of {turnaround_time} clock cycles.")
-
+                            print(f"PCB {pcb.p_id} has finished running with at clock cycle {clock_cycle} turnaround time of {turnaround_time} clock cycles.")    
+                            os_MM.deallocate_memory(pcb) #Deallocate memory for the PCB
                             pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
                             pcb_list.remove(pcb) #Remove the PCB from memory
 
@@ -408,13 +470,32 @@ def menu(os_scheduler):
         time.sleep(1) #Sleep for 1 second to give the user time to read the message
 
     elif choice == "8":
+        print("The memory manager algorithm choices are First-Fit and Worst-Fit.")
+        print(f"The current memory manager algorithm is {os_MM.algorithm}.")
+        
+        if(os_MM.algorithm == "First-Fit"): #Switch to the algorithm not currently being used
+            newmode = "Worst-Fit"
+        else: 
+            newmode = "First-Fit" 
+
+        PCB_8_choice = input(f"Would you like to change the memory manager algorithm to {newmode}? (Y/N): ").upper()
+        while PCB_8_choice != "Y" and PCB_8_choice != "N":
+            PCB_8_choice = input("Invalid input. Please enter Y or N: ").capitalize()
+        
+        if PCB_8_choice == "Y": #If the user wants to change the algorithm
+            os_MM.change_memory_algorithm(newmode) #Swap to alternative algorithm
+            print(f"Memory manager algorithm changed to {newmode}.")
+        else:
+            print(f"Memory manager algorithm remains as {os_MM.algorithm}.") #Otherwise stay the same
+
+    elif choice == "9":
         print("Goodbye!")
         exit()
     
     else:
-        print("Invalid input. Please enter a number between 1 and 8.")
+        print("Invalid input. Please enter a number between 1 and 9.")
     
-    menu(os_scheduler)
+    menu(os_scheduler, os_MM)
 
 #Call the boot function when the program is run
 if __name__ == "__main__": 
