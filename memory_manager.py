@@ -1,7 +1,7 @@
 class MemoryManager:
 
     #Memory Manager class 
-    #Used to manage memory allocation and deallocationm, defaults to First-Fit algorithm
+    #Used to manage memory allocation and deallocation, defaults to First-Fit algorithm
     
     def __init__(self, total_memory):
         """Initialize the memory manager.
@@ -25,16 +25,20 @@ class MemoryManager:
         """
         self.algorithm = algorithm
 
-    def allocate_memory(self, pcb, algorithm="First-Fit"):
+    def allocate_memory(self, pcb):
         """
         Allocate memory to a process using the specified algorithm.
         Args:
             pcb (PCB): The PCB requesting memory.
-            algorithm (str): The algorithm to use ("First-Fit" or "Worst-Fit").
         Returns:
             bool: True if allocation succeeded, False otherwise.
         """
-        if algorithm == "First-Fit":
+        #print(self.holes) #Print for troubleshooting
+
+        if self.algorithm == "First-Fit":
+            
+            #print("First-Fit algorithm selected.") #Print for troubleshooting
+
             for i, (start, size) in enumerate(self.holes): #Iterate through holes, the hole ranges from start to size, it can represented as (start, size)
                 if size >= pcb.memory: #Enough space to allocate memory
                     #Allocate memory
@@ -43,10 +47,14 @@ class MemoryManager:
                         self.holes.insert(i, (start + pcb.memory, size - pcb.memory)) #Insert new hole if there is extra space
                     self.allocated_blocks.append((start, pcb.memory, pcb.p_id)) #Add to allocated blocks
                     print(f"PCB {pcb.p_id} allocated memory at address {start} with size {pcb.memory}.")
+
                     return True #We have found a hole to allocate memory, return True to confirm this to the OS
             return False #Memory allocation failed
 
-        elif algorithm == "Worst-Fit":  
+        if self.algorithm == "Worst-Fit":  
+            
+            #print("Worst-Fit algorithm selected.") #Print for troubleshooting
+
             largest_hole_index = -1 #Index of the largest hole
             largest_hole_size = -1 #Size of the largest hole
             for i, (start, size) in enumerate(self.holes): #Iterate through holes, the hole ranges from start to size, it can represented as (start, size)
@@ -57,9 +65,10 @@ class MemoryManager:
                 print("Memory allocation failed.") #No hole found to allocate memory
                 return False #Return False to indicate memory allocation failed to the OS
             start, size = self.holes.pop(largest_hole_index) #Retrieve the largest hole
+            self.allocated_blocks.append((start, pcb.memory, pcb.p_id)) #Add to allocated blocks
             if size > pcb.memory: #If we can fit the process in the hole
                 self.holes.insert(largest_hole_index, (start + pcb.memory, size - pcb.memory)) #Insert new hole if there is extra space
-            self.allocated_blocks.append((start, pcb.memory, pcb.p_id)) #Add to allocated blocks
+                self.holes.sort() #Keep holes sorted by start address
             print(f"PCB {pcb.p_id} allocated memory at address {start} with size {pcb.memory}.")
             return True #We have found a hole to allocate memory, return True to confirm this to the OS
 
@@ -75,17 +84,52 @@ class MemoryManager:
                 self.holes.sort()  #Keep holes sorted by start address
                 break
 
-    def compact_memory(self): #Compact memory when fragmentation occurs
+    def compact_memory(self):
+        """Consolidate free memory while respecting allocated blocks."""
+        
+        #self.consolidate_adjacent_holes() #Consolidate adjacent holes first
 
-        #PROBLEM, THIS ERASES ALL HOLES, NEED TO FIX
+        all_memory = sorted(self.allocated_blocks + self.holes, key=lambda x: x[0]) #Combine allocated blocks and holes, sorted by starting address
 
-        """Combine fragmented memory into one large block."""
+        consolidated_holes = []
+        current_hole_start = None
+        current_hole_size = 0
+
+        for block in all_memory:
+            if len(block) == 3:  #If length is 3, it is an allocated block
+                if current_hole_size > 0:  #If there is a hole that is being consolidated
+                    consolidated_holes.append((current_hole_start, current_hole_size)) #We can't consolidate it anymore, so add it to the list of consolidated holes
+                    current_hole_start = None #Reset the hole 
+                    current_hole_size = 0 
+            else:  #Non allocated block
+                start, size = block #Unpack the block
+                if current_hole_start is None: #If there is no hole being consolidated
+                    current_hole_start = start #Start a new hole
+                    current_hole_size = size
+                else: #Otherwise, extend the existing hole
+                    current_hole_size += size
+
+        if current_hole_size > 0: #Add the last hole to the list of consolidated holes
+            consolidated_holes.append((current_hole_start, current_hole_size))
+
+        self.holes = consolidated_holes
+        #print("Memory compaction performed. Free memory consolidated.")
+
+
+    def consolidate_adjacent_holes(self):
+        """Combine adjacent holes into one large hole, done before compaction."""
         self.holes.sort() #Sort holes by start address
-        combined_start = self.holes[0][0] #Retrieve the start address of the first hole
-        combined_size = sum(size for _, size in self.holes) #Sum the sizes of all holes
-        self.holes = [(combined_start, combined_size)] #Combine all holes into one large hole
-        #print("Memory compaction performed.")
+        if len(self.holes) == 1: #If there is only one hole
+            return #No need to consolidate
+        
+        newholes = [self.holes[0]] #List to store new (consolidated) holes, start with the first hole
 
-    #COMPACT ADJACENT HOLES METHOD
-
+        for hole in self.holes[1:]: #Iterate through the remaining holes
+            if hole[0] == newholes[-1][0] + newholes[-1][1]: #If the last addition to newholes is adjacent to the current hole, combine them
+                newholes[-1] = (newholes[-1][0], newholes[-1][1] + hole[1]) #Replace that last addition with a new hole that is the sum of the two
+            else:
+                newholes.append(hole) #Otherwise, add the hole to newholes
+        self.holes = newholes
+        #print("Adjacent holes consolidated.")
+    
     

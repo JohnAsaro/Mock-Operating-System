@@ -255,7 +255,8 @@ def menu(os_scheduler, os_MM):
                                         print(f"PCB {pcb.p_id} has {pcb.cpu_required} clock cycles remaining.")
                                         pcb.cpu_required -= 1 #Run the process for one clock cycle
                                         output_list.append(f"P{pcb.p_id}") #Add the PCB to the output list
-                                        time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
+                                        time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life
+                                        #most of the time but this is easier to read as opposed to a lot of information coming at you at once
                                         if pcb.cpu_required == 0:
                                             pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
                                             pcb_list.remove(pcb)
@@ -312,7 +313,8 @@ def menu(os_scheduler, os_MM):
                                     total_turnaround_time += turnaround_time #Add to total turnaround time
                                     print(f"PCB {pcb.p_id} has finished running with at clock cycle {clock_cycle} turnaround time of {turnaround_time} clock cycles.")
                                     os_MM.deallocate_memory(pcb) #Deallocate memory for the PCB
-                                time.sleep(.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
+                                time.sleep(.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life
+                                #most of the time but this is easier to read as opposed to a lot of information coming at you at once
                                 break #Move on to the next PCB
                         
                         os_scheduler.organize_pcb_list() #Reorganize the PCB list based on the scheduling info                            
@@ -322,7 +324,8 @@ def menu(os_scheduler, os_MM):
                         print(f"No PCBs available for clock cycle {clock_cycle}, moving on to next clock cycle.")
                         clock_cycle += 1 #Increment the clock cycle
                         output_list.append("_") #Add the gap to the output list
-                        time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
+                        time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a 
+                        #lot of information coming at you at once
                     
                     did_something = False
 
@@ -372,7 +375,8 @@ def menu(os_scheduler, os_MM):
                             pcb.cpu_state = 0 #Set the CPU state to 0 (not running)
                             pcb_list.remove(pcb) #Remove the PCB from memory
 
-                            time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
+                            time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed 
+                            #to a lot of information coming at you at once
                             break #Move on to the next PCB
                             #No need to reschedule the PCBs as each PCB is run to completion, no need to ever update context switchs because we never switch with non premptive
                     
@@ -380,7 +384,8 @@ def menu(os_scheduler, os_MM):
                         print(f"No PCBs available for clock cycle {clock_cycle}, moving on to next clock cycle.")
                         clock_cycle += 1 #Increment the clock cycle
                         output_list.append("_") #Add the gap to the output list
-                        time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as opposed to a lot of information coming at you at once
+                        time.sleep(0.5) #Sleep for half a second to simulate the clock cycle, clock cycles are faster in real life most of the time but this is easier to read as 
+                        #opposed to a lot of information coming at you at once
                     
                     did_something = False
 
@@ -487,6 +492,7 @@ def menu(os_scheduler, os_MM):
             print(f"Memory manager algorithm changed to {newmode}.")
         else:
             print(f"Memory manager algorithm remains as {os_MM.algorithm}.") #Otherwise stay the same
+        time.sleep(1) #Sleep for 1 second to give the user time to read the message
 
     elif choice == "9":
         print("Goodbye!")
