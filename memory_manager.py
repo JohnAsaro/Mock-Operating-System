@@ -87,37 +87,31 @@ class MemoryManager:
     def compact_memory(self):
         """Consolidate free memory while respecting allocated blocks."""
         
-        #self.consolidate_adjacent_holes() #Consolidate adjacent holes first
+        self.consolidate_adjacent_holes() #Consolidate adjacent holes first
+        self.holes.sort() #Sort holes by start address      
+        
+        total_hole_size = sum([hole[1] for hole in self.holes]) #Total size of all holes
+        self.holes = [(0, total_hole_size)] #Create a single hole that spans the entire free memory
 
-        all_memory = sorted(self.allocated_blocks + self.holes, key=lambda x: x[0]) #Combine allocated blocks and holes, sorted by starting address
+        new_allocation_start = total_hole_size #Start address for new allocations, all allocated blocks are after the consolidated hole
+        moved_blocks = [] #List to store blocks that have been moved
 
-        consolidated_holes = []
-        current_hole_start = None
-        current_hole_size = 0
+        for block in self.allocated_blocks: #Iterate through allocated blocks
+            start, size, pcb_id = block #Unpack the block
+            moved_blocks.append((new_allocation_start, size, pcb_id)) #Add the block to moved blocks list with the new start address
+            print(f"PCB {pcb_id} moved from address {start} to address {new_allocation_start} with size {size}.") #Show the user where the block has been moved
+            new_allocation_start += size #Increment the start address for the next block allocation
 
-        for block in all_memory:
-            if len(block) == 3:  #If length is 3, it is an allocated block
-                if current_hole_size > 0:  #If there is a hole that is being consolidated
-                    consolidated_holes.append((current_hole_start, current_hole_size)) #We can't consolidate it anymore, so add it to the list of consolidated holes
-                    current_hole_start = None #Reset the hole 
-                    current_hole_size = 0 
-            else:  #Non allocated block
-                start, size = block #Unpack the block
-                if current_hole_start is None: #If there is no hole being consolidated
-                    current_hole_start = start #Start a new hole
-                    current_hole_size = size
-                else: #Otherwise, extend the existing hole
-                    current_hole_size += size
+        
+        self.allocated_blocks = moved_blocks #Update the allocated blocks list
 
-        if current_hole_size > 0: #Add the last hole to the list of consolidated holes
-            consolidated_holes.append((current_hole_start, current_hole_size))
-
-        self.holes = consolidated_holes
-        #print("Memory compaction performed. Free memory consolidated.")
+        print(f"Memory compaction complete. New compacted memory block: {self.holes[0]}, Allocated blocks: {self.allocated_blocks}") #Show the user the new hole that spans the entire free memory and the new allocated blocks
 
 
     def consolidate_adjacent_holes(self):
         """Combine adjacent holes into one large hole, done before compaction."""
+
+        print("Consolidating adjacent holes...")
         self.holes.sort() #Sort holes by start address
         if len(self.holes) == 1: #If there is only one hole
             return #No need to consolidate
